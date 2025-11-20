@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Resumidora de Texto</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            border-radius: 8px;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        #resultado {
+            margin-top: 25px;
+            font-size: 17px;
+            background: #e9f7e9; /* Fundo levemente verde */
+            color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 50px;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        /* Estilo para a mensagem de carregamento */
+        .loading {
+            color: #4CAF50;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🧠 IA Resumidora de Texto</h2>
+        <p>Digite um texto para resumir:</p>
+
+        <textarea id="inputText" placeholder="Cole seu texto aqui..."></textarea>
+        <button onclick="resumir()">Gerar Resumo</button>
+
+        <h3>📄 Resultado:</h3>
+        <div id="resultado">O resumo aparecerá aqui...</div>
+    </div>
+
+    <script>
+        // URL da sua API local
+        const API_URL = "http://127.0.0.1:8000/summarize";
+
+        async function resumir() {
+            const resultadoDiv = document.getElementById("resultado");
+            const texto = document.getElementById("inputText").value;
+
+            // 1. Validação básica no frontend
+            if (texto.length < 20) {
+                resultadoDiv.innerText = "Por favor, insira um texto com pelo menos 20 caracteres para obter um resumo significativo.";
+                resultadoDiv.style.backgroundColor = '#fce4e4'; // Fundo vermelho claro para erro
+                return;
+            }
+
+            // 2. Estado de carregamento
+            resultadoDiv.innerHTML = '<span class="loading">Gerando resumo, aguarde...</span>';
+            resultadoDiv.style.backgroundColor = '#fffbe9'; // Fundo amarelo claro para carregamento
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: texto })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 3. CORREÇÃO CRÍTICA AQUI: Usar data.summary
+                    resultadoDiv.innerText = data.summary;
+                    resultadoDiv.style.backgroundColor = '#e9f7e9'; // Fundo verde claro para sucesso
+                } else {
+                    // Trata erros do backend (ex: erro 400 ou 500)
+                    resultadoDiv.innerText = `Erro (${response.status}): ${data.detail || "Não foi possível conectar ao servidor ou a API falhou."}`;
+                    resultadoDiv.style.backgroundColor = '#fce4e4'; // Fundo vermelho claro para erro
+                }
+                
+            } catch (error) {
+                // Trata erros de rede (ex: Uvicorn não está rodando)
+                console.error("Erro de rede:", error);
+                resultadoDiv.innerText = "Erro de conexão: Verifique se o backend (Uvicorn) está rodando e se a porta 8000 está acessível.";
+                resultadoDiv.style.backgroundColor = '#fce4e4';
+            }
+        }
+    </script>
+</body>
+</html>
